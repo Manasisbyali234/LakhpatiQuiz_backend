@@ -42,6 +42,7 @@ app.get('/api/health', (req, res) => res.json({
   mongo: !!process.env.MONGO_URI,
   client: process.env.CLIENT_URL || null,
 }));
+app.post('/api/auth/test', (req, res) => res.json({ reached: true, body: req.body }));
 app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 
 // eslint-disable-next-line no-unused-vars
