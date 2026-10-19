@@ -1,0 +1,55 @@
+require('dotenv').config();
+const path = require('path');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const connectDB = require('./config/db');
+
+if (!process.env.JWT_SECRET) {
+  console.error('Missing JWT_SECRET. Copy .env.example to .env and set it.');
+  process.exit(1);
+}
+
+const app = express();
+app.set('trust proxy', 1);
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors({ origin: process.env.CLIENT_URL || true }));
+app.use(express.json({ limit: '50kb' }));
+if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
+
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/game', require('./routes/game'));
+app.use('/api/questions', require('./routes/questions'));
+app.use('/api/admin', require('./routes/admin'));
+
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
+
+// Serve the built React app in production.
+if (process.env.NODE_ENV === 'production') {
+  const dist = path.join(__dirname, '../client/dist');
+  app.use(express.static(dist));
+  app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
+}
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (err.name === 'ValidationError') err.status = 400;
+  if (err.name === 'CastError') {
+    err.status = 400;
+    err.message = 'Invalid id';
+  }
+  if (!err.status) console.error(err);
+  res.status(err.status || 500).json({ message: err.status ? err.message : 'Something went wrong' });
+});
+
+const port = process.env.PORT || 5000;
+connectDB()
+  .then(() => app.listen(port, () => console.log(`API running on http://localhost:${port}`)))
+  .catch((e) => {
+    console.error('Could not connect to MongoDB:', e.message);
+    process.exit(1);
+  });
