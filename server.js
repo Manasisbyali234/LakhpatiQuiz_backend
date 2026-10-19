@@ -8,8 +8,7 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 
 if (!process.env.JWT_SECRET) {
-  console.error('Missing JWT_SECRET. Copy .env.example to .env and set it.');
-  process.exit(1);
+  console.error('Missing JWT_SECRET');
 }
 
 const app = express();
@@ -34,7 +33,12 @@ app.use('/api/game', require('./routes/game'));
 app.use('/api/questions', require('./routes/questions'));
 app.use('/api/admin', require('./routes/admin'));
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/health', (req, res) => res.json({
+  ok: true,
+  jwt: !!process.env.JWT_SECRET,
+  mongo: !!process.env.MONGO_URI,
+  client: process.env.CLIENT_URL || null,
+}));
 app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 
 // eslint-disable-next-line no-unused-vars

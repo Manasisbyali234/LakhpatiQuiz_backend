@@ -5,8 +5,10 @@ const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { wrap, httpError } = require('../utils/helpers');
 
-const sign = (user) =>
-  jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const sign = (user) => {
+  if (!process.env.JWT_SECRET) throw httpError(500, 'JWT_SECRET not configured');
+  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
 
 const publicUser = (u) => ({ id: u._id, name: u.name, email: u.email, role: u.role });
 
