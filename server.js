@@ -53,11 +53,15 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.status ? err.message : 'Something went wrong' });
 });
 
-const mongoose = require('mongoose');
-
 // Serverless export for Vercel
+const mongoose = require('mongoose');
 module.exports = async (req, res) => {
-  if (mongoose.connection.readyState === 0) await connectDB();
+  try {
+    if (mongoose.connection.readyState === 0) await connectDB();
+  } catch (e) {
+    console.error('DB connect failed:', e.message);
+    return res.status(500).json({ message: 'Database connection failed' });
+  }
   app(req, res);
 };
 
