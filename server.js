@@ -28,7 +28,9 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '50kb' }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false }));
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false }));
+}
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/game', require('./routes/game'));
 app.use('/api/questions', require('./routes/questions'));
