@@ -28,13 +28,6 @@ app.use('/api/admin', require('./routes/admin'));
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 
-// Serve the built React app in production.
-if (process.env.NODE_ENV === 'production') {
-  const dist = path.join(__dirname, '../client/dist');
-  app.use(express.static(dist));
-  app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
-}
-
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   if (err.name === 'ValidationError') err.status = 400;
@@ -46,10 +39,24 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.status ? err.message : 'Something went wrong' });
 });
 
-const port = process.env.PORT || 5000;
-connectDB()
-  .then(() => app.listen(port, () => console.log(`API running on http://localhost:${port}`)))
-  .catch((e) => {
-    console.error('Could not connect to MongoDB:', e.message);
-    process.exit(1);
-  });
+let dbReady = false;
+const ensureDB = async () => {
+  if (!dbReady) {
+    await connectDB();
+    dbReady = true;
+  }
+};
+
+// Serverless export for Vercel
+module.exports = async (req, res) => {
+  await ensureDB();
+  app(req, res);
+};
+
+// Local dev
+if (require.main === module) {
+  const port = process.env.PORT || 5000;
+  connectDB()
+    .then(() => app.listen(port, () => console.log(`API running on http://localhost:${port}`)))
+    .catch((e) => { console.error('Could not connect to MongoDB:', e.message); process.exit(1); });
+}
