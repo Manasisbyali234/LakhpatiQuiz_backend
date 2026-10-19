@@ -13,7 +13,7 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 app.set('trust proxy', 1);
-app.use(helmet({ contentSecurityPolicy: false }));
+
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',')
   : '*';
@@ -23,8 +23,9 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
-app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 app.use(express.json({ limit: '50kb' }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
