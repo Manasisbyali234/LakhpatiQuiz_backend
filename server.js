@@ -16,14 +16,15 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',')
-  : true;
-app.use(cors({
+  : '*';
+const corsOptions = {
   origin: allowedOrigins,
-  credentials: true,
+  credentials: allowedOrigins !== '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-app.options('*', cors());
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '50kb' }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
